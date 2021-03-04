@@ -1,0 +1,4 @@
+.env
+vendor
+credentials/access.txt
+credentials/refresh.txt
