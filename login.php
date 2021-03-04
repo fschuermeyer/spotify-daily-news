@@ -2,20 +2,23 @@
 
 require 'vendor/autoload.php';
 
+session_start();
+
+
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 $session = new SpotifyWebAPI\Session(
     $_ENV['CLIENT_ID'],
     $_ENV['CLIENT_SECRET'],
-    $_ENV['REDIRECT_URL'] . 'login.php'
+    $_ENV['LOGIN_URL'] . 'login.php'
 );
 
 if (isset($_GET['code'])) {
     $session->requestAccessToken($_GET['code']);
 
-    file_put_contents('credentials/refresh.txt',$session->getRefreshToken());
-    file_put_contents('credentials/access.txt',$session->getAccessToken());
+    $_SESSION['refresh'] = $session->getRefreshToken();
+    $_SESSION['access'] = $session->getAccessToken();
 
     header('Location: index.php');
 } else {

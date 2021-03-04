@@ -2,6 +2,13 @@
 
 require 'vendor/autoload.php';
 
+session_start();
+
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 /**
  * DailyNews
  * @author Felix Schürmeyer
@@ -54,20 +61,6 @@ class DailyNews{
     private $ignorePlaylist = ['Daily Drive','Daily News'];
     
     /**
-     * refresh
-     * Refresh Token
-     * @var string
-     */
-    private $refresh = "credentials/refresh.txt";
-    
-    /**
-     * access
-     * Access Token
-     * @var string
-     */
-    private $access = "credentials/access.txt";
-    
-    /**
      * myPlaylists
      * Playlist in My Spotify Account
      * @var array
@@ -94,6 +87,7 @@ class DailyNews{
      * @return void
      */
     function __construct(){
+
         $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
         $dotenv->load();
 
@@ -101,21 +95,20 @@ class DailyNews{
 
         $this->go = false;
 
-        if(file_exists($this->refresh) && file_exists($this->access)){
+        if(!empty($_SESSION['refresh']) && !empty($_SESSION['access'])){
             $this->session = new SpotifyWebAPI\Session(
                 $_ENV['CLIENT_ID'],
                 $_ENV['CLIENT_SECRET'],
-                $_ENV['REDIRECT_URL'] . 'login.php'
+                $_ENV['LOGIN_URL'] . 'login.php'
             );
             
             try {
-                $this->session->refreshAccessToken(file_get_contents($this->refresh));
+                $this->session->refreshAccessToken($_SESSION['refresh']);
 
                 $this->api = new SpotifyWebAPI\SpotifyWebAPI();
 
-                $this->api->setAccessToken(file_get_contents($this->access));
+                $this->api->setAccessToken($_SESSION['access']);
 
-        
                 $this->myPlaylists = $this->api->getMyPlaylists()->items;
             } catch (SpotifyWebAPI\SpotifyWebAPIAuthException $th) {
                 $this->response = "Dein Login ist Abgelaufen.";
@@ -329,16 +322,20 @@ class DailyNews{
 
         return $music;
     }
-
-    private function flatten(array $array): array {
+    
+    /**
+     * flatten
+     * Array Flatten
+     * @param  mixed $array
+     * @return array
+     */
+    private function flatten($array): array {
         if (!is_array($array)) {
-            // nothing to do if it's not an array
             return array($array);
         }
 
         $result = array();
         foreach ($array as $value) {
-            // explode the sub-array, and add the parts
             $result = array_merge($result, $this->flatten($value));
         }
 
